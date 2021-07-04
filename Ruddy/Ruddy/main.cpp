@@ -33,6 +33,8 @@ struct Token {
     TokenType tokenType;
     std::string payload;
 
+    Token() : payload("") {}
+    
     Token(const std::string& s) : payload(s) {
              if (s == "+") { tokenType = TokenType::ADD; }
         else if (s == "-") { tokenType = TokenType::SUB; }
@@ -90,12 +92,66 @@ std::vector<std::vector<Token>> tokenize(const std::vector<std::string>& lines) 
 }
 
 // --- Parser
-struct Expression {
-    
+/*
+ * Expression BNF are assumed to take the following forms (and parsed in the order listed):
+ * expression  : []
+ * value       : [value]
+ * paren       : ([value])
+ * mul/div     : [value] (*,/) [value]
+ * add/sub     : [value] (+,-) [value]
+ */
+enum class ExpressionType {
+    VALUE,
+    ADD,
+    SUB,
+    MUL,
+    DIV,
 };
 
-std::vector<Expression> parseLine(const std::vector<Token> tokenLine) {
+std::string printExpressionType(ExpressionType tokenType) {
+         if (tokenType == ExpressionType::VALUE) { return "VALUE"; }
+    else if (tokenType == ExpressionType::ADD)   { return "ADD"; }
+    else if (tokenType == ExpressionType::SUB)   { return "SUB"; }
+    else if (tokenType == ExpressionType::MUL)   { return "MUL"; }
+    else if (tokenType == ExpressionType::DIV)   { return "DIV"; }
+    else { return "INVALID_EXPRESSION"; }
+}
+
+// NOTE: not the best design, but we just have a single expression and just use the subset of
+// properties that are relevant to each expression type
+struct Expression {
+    ExpressionType expressionType;
+    Token token;
+    
+    Expression() {}
+    
+    std::string str() const {
+        return printExpressionType(expressionType) + " - " + token.str();
+    }
+};
+
+Expression valueExpression(Token token) {
+    Expression expression;
+    expression.expressionType = ExpressionType::VALUE;
+    expression.token = token;
+    return expression;
+}
+
+std::vector<Expression> valueExpressions(const std::vector<Token> tokens) {
     std::vector<Expression> expressions;
+    for (Token token : tokens) {
+        expressions.push_back(valueExpression(token));
+    }
+    return expressions;
+}
+
+std::vector<Expression> parseLine(const std::vector<Token> tokenLine) {
+    std::vector<Expression> expressions = valueExpressions(tokenLine);
+    
+    for (const Expression expression : expressions) {
+        std::cout << expression.str() << std::endl;
+    }
+    
     return expressions;
 }
 
@@ -123,6 +179,7 @@ int main(int argc, char * argv[]) {
     // basic flow: strings -> tokens -> expressions -> values
     
     std::vector<std::vector<Token>> tokens = tokenize(lines);
+    std::vector<std::vector<Expression>> expressions = parse(tokens);
     
     return 0;
 }
