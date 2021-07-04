@@ -121,42 +121,79 @@ std::string printExpressionType(ExpressionType tokenType) {
 // properties that are relevant to each expression type
 struct Expression {
     ExpressionType expressionType;
+    
+    // value tokens
     Token token;
+    
+    // binary ops
+    std::shared_ptr<Expression> left;
+    std::shared_ptr<Expression> right;
     
     Expression() {}
     
     std::string str() const {
-        return printExpressionType(expressionType) + " - " + token.str();
+        if (expressionType == ExpressionType::VALUE) { return printExpressionType(expressionType) + " - " + token.str(); }
+        else if (expressionType == ExpressionType::MUL) { return printExpressionType(expressionType) + " - " + left->str() + " * " + right->str(); }
+        else { return "INVALID_EXPRESSION"; }
     }
 };
 
-Expression valueExpression(Token token) {
-    Expression expression;
-    expression.expressionType = ExpressionType::VALUE;
-    expression.token = token;
+std::shared_ptr<Expression> valueExpression(Token token) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::VALUE;
+    expression->token = token;
     return expression;
 }
 
-std::vector<Expression> valueExpressions(const std::vector<Token> tokens) {
-    std::vector<Expression> expressions;
+std::shared_ptr<Expression> mulExpression(std::shared_ptr<Expression> left, std::shared_ptr<Expression> right) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::MUL;
+    expression->left = left;
+    expression->right = right;
+    return expression;
+}
+
+std::vector<std::shared_ptr<Expression>> valueExpressions(const std::vector<Token> tokens) {
+    std::vector<std::shared_ptr<Expression>> expressions;
     for (Token token : tokens) {
         expressions.push_back(valueExpression(token));
     }
     return expressions;
 }
 
-std::vector<Expression> parseLine(const std::vector<Token> tokenLine) {
-    std::vector<Expression> expressions = valueExpressions(tokenLine);
+std::vector<std::shared_ptr<Expression>> mulExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
+    std::vector<std::shared_ptr<Expression>> newExpressions;
+    bool addingExpression = false;
+    for (std::shared_ptr<Expression> expression : expressions) {
+        if (addingExpression) {
+            std::shared_ptr<Expression> left = newExpressions.back();
+            newExpressions.pop_back();
+            newExpressions.push_back(mulExpression(left, expression));
+            addingExpression = false;
+        } else {
+            if (expression->token.tokenType == TokenType::MUL) {
+                addingExpression = true;
+            } else {
+                newExpressions.push_back(expression);
+            }
+        }
+    }
+    return newExpressions;
+}
+
+std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<Token> tokenLine) {
+    std::vector<std::shared_ptr<Expression>> expressions = valueExpressions(tokenLine);
+    expressions = mulExpressions(expressions);
     
-    for (const Expression expression : expressions) {
-        std::cout << expression.str() << std::endl;
+    for (const std::shared_ptr<Expression> expression : expressions) {
+        std::cout << expression->str() << std::endl;
     }
     
     return expressions;
 }
 
-std::vector<std::vector<Expression>> parse(const std::vector<std::vector<Token>>& tokenLines) {
-    std::vector<std::vector<Expression>> expressions;
+std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<std::vector<Token>>& tokenLines) {
+    std::vector<std::vector<std::shared_ptr<Expression>>> expressions;
     for (const std::vector<Token>& tokenLine : tokenLines) {
         expressions.push_back(parseLine(tokenLine));
     }
@@ -179,7 +216,7 @@ int main(int argc, char * argv[]) {
     // basic flow: strings -> tokens -> expressions -> values
     
     std::vector<std::vector<Token>> tokens = tokenize(lines);
-    std::vector<std::vector<Expression>> expressions = parse(tokens);
+    std::vector<std::vector<std::shared_ptr<Expression>>> expressions = parse(tokens);
     
     return 0;
 }
