@@ -13,8 +13,6 @@ enum class TokenType {
     DIV,
     LEFT_PAREN,
     RIGHT_PAREN,
-    SINGLE_QUOTE,
-    DOUBLE_QUOTE,
     WORD,
     NUMBER
 };
@@ -26,8 +24,6 @@ std::string printTokenType(TokenType tokenType) {
     else if (tokenType == TokenType::DIV) { return "DIV"; }
     else if (tokenType == TokenType::LEFT_PAREN) { return "LEFT_PAREN"; }
     else if (tokenType == TokenType::RIGHT_PAREN) { return "RIGHT_PAREN"; }
-    else if (tokenType == TokenType::SINGLE_QUOTE) { return "SINGLE_QUOTE"; }
-    else if (tokenType == TokenType::DOUBLE_QUOTE) { return "DOUBLE_QUOTE"; }
     else if (tokenType == TokenType::WORD) { return "WORD"; }
     else if (tokenType == TokenType::NUMBER) { return "NUMBER"; }
     else { return "INVALID_TOKEN"; }
@@ -44,8 +40,6 @@ struct Token {
         else if (s == "/") { tokenType = TokenType::DIV; }
         else if (s == "(") { tokenType = TokenType::LEFT_PAREN; }
         else if (s == ")") { tokenType = TokenType::RIGHT_PAREN; }
-        else if (s == "'") { tokenType = TokenType::SINGLE_QUOTE; }
-        else if (s == "\"") { tokenType = TokenType::DOUBLE_QUOTE; }
         else if (std::isdigit(s[0])) { tokenType = TokenType::NUMBER; }
         else { tokenType = TokenType::WORD; }
     }
@@ -60,10 +54,16 @@ std::vector<Token> tokenize_line(const std::string& line) {
     
     std::string curPayload;
     for (const char c : line) {
-        if (c == ' ') {
+        if (c == ' ' || (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')')) {
             if (curPayload.size() > 0) {
                 tokens.push_back(Token(curPayload));
                 curPayload = std::string();
+            }
+            
+            if (c != ' ') {
+                std::string temp;
+                temp += c;
+                tokens.push_back(Token(temp));
             }
         } else {
             curPayload += c;

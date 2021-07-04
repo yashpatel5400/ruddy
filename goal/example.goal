@@ -1,10 +1,1 @@
-func pass() : int {
-    int x = 5;
-    print(x);
-    return 6;
-}
-
-func main() : void {
-    int y = pass();
-    print(y);    
-}
+   3  - 4 +     3 * ( 2  +3-2*3)
