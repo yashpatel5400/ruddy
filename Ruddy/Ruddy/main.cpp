@@ -5,7 +5,7 @@
 
 DEFINE_string(input_path, "", "Path to test file");
 
-// correspond to reserved words/symbols in language
+// --- Lexer
 enum class TokenType {
     ADD,
     SUB,
@@ -74,9 +74,9 @@ std::vector<Token> tokenize_line(const std::string& line) {
         tokens.push_back(Token(curPayload));
     }
 
-    for (const Token& token : tokens) {
-        std::cout << token.str() << std::endl;
-    }
+    // for (const Token& token : tokens) {
+    //     std::cout << token.str() << std::endl;
+    // }
     
     return tokens;
 }
@@ -89,6 +89,25 @@ std::vector<std::vector<Token>> tokenize(const std::vector<std::string>& lines) 
     return statements;
 }
 
+// --- Parser
+struct Expression {
+    
+};
+
+std::vector<Expression> parseLine(const std::vector<Token> tokenLine) {
+    std::vector<Expression> expressions;
+    return expressions;
+}
+
+std::vector<std::vector<Expression>> parse(const std::vector<std::vector<Token>>& tokenLines) {
+    std::vector<std::vector<Expression>> expressions;
+    for (const std::vector<Token>& tokenLine : tokenLines) {
+        expressions.push_back(parseLine(tokenLine));
+    }
+    return expressions;
+}
+
+// --- Tester
 int main(int argc, char * argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
