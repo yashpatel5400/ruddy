@@ -76,10 +76,6 @@ std::vector<Token> tokenize_line(const std::string& line) {
         tokens.push_back(Token(curPayload));
     }
 
-    // for (const Token& token : tokens) {
-    //     std::cout << token.str() << std::endl;
-    // }
-    
     return tokens;
 }
 
@@ -132,8 +128,11 @@ struct Expression {
     Expression() {}
     
     std::string str() const {
-        if (expressionType == ExpressionType::VALUE) { return printExpressionType(expressionType) + " - " + token.str(); }
-        else if (expressionType == ExpressionType::MUL) { return printExpressionType(expressionType) + " - " + left->str() + " * " + right->str(); }
+        if (expressionType == ExpressionType::VALUE)    { return printExpressionType(expressionType) + ": " + token.str(); }
+        else if (expressionType == ExpressionType::MUL) { return printExpressionType(expressionType) + ": " + left->str() + " * " + right->str(); }
+        else if (expressionType == ExpressionType::DIV) { return printExpressionType(expressionType) + ": " + left->str() + " / " + right->str(); }
+        else if (expressionType == ExpressionType::ADD) { return printExpressionType(expressionType) + ": " + left->str() + " + " + right->str(); }
+        else if (expressionType == ExpressionType::SUB) { return printExpressionType(expressionType) + ": " + left->str() + " - " + right->str(); }
         else { return "INVALID_EXPRESSION"; }
     }
 };
@@ -189,10 +188,10 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
 
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<Token> tokenLine) {
     std::vector<std::shared_ptr<Expression>> expressions = valueExpressions(tokenLine);
-    expressions = binaryOpExpressions(ExpressionType::MUL, expressions);
-    expressions = binaryOpExpressions(ExpressionType::DIV, expressions);
-    expressions = binaryOpExpressions(ExpressionType::ADD, expressions);
-    expressions = binaryOpExpressions(ExpressionType::SUB, expressions);
+    expressions = binaryOpExpressions(expressions, ExpressionType::MUL);
+    expressions = binaryOpExpressions(expressions, ExpressionType::DIV);
+    expressions = binaryOpExpressions(expressions, ExpressionType::ADD);
+    expressions = binaryOpExpressions(expressions, ExpressionType::SUB);
     
     for (const std::shared_ptr<Expression> expression : expressions) {
         std::cout << expression->str() << std::endl;
