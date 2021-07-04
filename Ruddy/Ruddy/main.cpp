@@ -1,9 +1,11 @@
 #include <iostream>
 
-#inlu
+#include <gflags/gflags.h>
 
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+DEFINE_string(input_path, "", "Path to test file");
+
+int main(int argc, char * argv[]) {
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    std::cout << "path: " << FLAGS_input_path << std::endl;
     return 0;
 }
