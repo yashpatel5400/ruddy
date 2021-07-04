@@ -96,12 +96,16 @@ std::vector<std::vector<Token>> tokenize(const std::vector<std::string>& lines) 
  * mul/div     : [value] (*,/) [value]
  * add/sub     : [value] (+,-) [value]
  */
+struct Expression;
+std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions);
+
 enum class ExpressionType {
     VALUE,
     ADD,
     SUB,
     MUL,
     DIV,
+    PAREN,
 };
 
 std::string printExpressionType(ExpressionType tokenType) {
@@ -110,6 +114,7 @@ std::string printExpressionType(ExpressionType tokenType) {
     else if (tokenType == ExpressionType::SUB)   { return "SUB"; }
     else if (tokenType == ExpressionType::MUL)   { return "MUL"; }
     else if (tokenType == ExpressionType::DIV)   { return "DIV"; }
+    else if (tokenType == ExpressionType::PAREN) { return "PAREN"; }
     else { return "INVALID_EXPRESSION"; }
 }
 
@@ -121,6 +126,9 @@ struct Expression {
     // value tokens
     Token token;
     
+    // unary ops
+    std::vector<std::shared_ptr<Expression>> core;
+    
     // binary ops
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
@@ -128,11 +136,20 @@ struct Expression {
     Expression() {}
     
     std::string str() const {
-        if (expressionType == ExpressionType::VALUE)    { return printExpressionType(expressionType) + ": " + token.str(); }
-        else if (expressionType == ExpressionType::MUL) { return printExpressionType(expressionType) + ": " + left->str() + " * " + right->str(); }
-        else if (expressionType == ExpressionType::DIV) { return printExpressionType(expressionType) + ": " + left->str() + " / " + right->str(); }
-        else if (expressionType == ExpressionType::ADD) { return printExpressionType(expressionType) + ": " + left->str() + " + " + right->str(); }
-        else if (expressionType == ExpressionType::SUB) { return printExpressionType(expressionType) + ": " + left->str() + " - " + right->str(); }
+        if (expressionType == ExpressionType::VALUE)      { return "<" + token.str() + ">"; }
+        else if (expressionType == ExpressionType::PAREN) {
+            std::string representation;
+            representation = "(";
+            for (std::shared_ptr<Expression> expression : core) {
+                representation += expression->str();
+            }
+            representation += ")";
+            return representation;
+        }
+        else if (expressionType == ExpressionType::MUL)   { return "<" + left->str() + "> * <" + right->str() + ">"; }
+        else if (expressionType == ExpressionType::DIV)   { return "<" + left->str() + "> / <" + right->str() + ">"; }
+        else if (expressionType == ExpressionType::ADD)   { return "<" + left->str() + "> + <" + right->str() + ">"; }
+        else if (expressionType == ExpressionType::SUB)   { return "<" + left->str() + "> - <" + right->str() + ">"; }
         else { return "INVALID_EXPRESSION"; }
     }
 };
@@ -149,6 +166,13 @@ std::shared_ptr<Expression> binaryOpExpression(ExpressionType expressionType, st
     expression->expressionType = expressionType;
     expression->left = left;
     expression->right = right;
+    return expression;
+}
+
+std::shared_ptr<Expression> parenExpression(std::vector<std::shared_ptr<Expression>> core) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::PAREN;
+    expression->core = parseLine(core);
     return expression;
 }
 
@@ -186,15 +210,46 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
     return newExpressions;
 }
 
+std::vector<std::shared_ptr<Expression>> parenExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
+    std::vector<std::shared_ptr<Expression>> newExpressions;
+    bool addingExpression = false;
+    std::vector<std::shared_ptr<Expression>> currentParenExpression;
+    for (std::shared_ptr<Expression> expression : expressions) {
+        if (addingExpression) {
+            if (expression->token.tokenType == TokenType::RIGHT_PAREN) {
+                newExpressions.push_back(parenExpression(currentParenExpression));
+                addingExpression = false;
+            } else {
+                currentParenExpression.push_back(expression);
+            }
+        } else {
+            if (expression->token.tokenType == TokenType::LEFT_PAREN) {
+                addingExpression = true;
+                currentParenExpression = std::vector<std::shared_ptr<Expression>>();
+            } else {
+                newExpressions.push_back(expression);
+            }
+        }
+    }
+    return newExpressions;
+}
+
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
-    std::vector<std::shared_ptr<Expression>> newExpressions = binaryOpExpressions(expressions, ExpressionType::MUL);
+    std::vector<std::shared_ptr<Expression>> newExpressions = expressions;
+    
+    newExpressions = parenExpressions(newExpressions);
+    
+    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::MUL);
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::DIV);
+    
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::ADD);
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::SUB);
     
+    std::cout << " [ ";
     for (const std::shared_ptr<Expression> expression : newExpressions) {
-        std::cout << expression->str() << std::endl;
+        std::cout << expression->str();
     }
+    std::cout << " ] " << std::endl;
     
     return newExpressions;
 }
