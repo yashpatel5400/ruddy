@@ -186,24 +186,23 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
     return newExpressions;
 }
 
-std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<Token> tokenLine) {
-    std::vector<std::shared_ptr<Expression>> expressions = valueExpressions(tokenLine);
-    expressions = binaryOpExpressions(expressions, ExpressionType::MUL);
-    expressions = binaryOpExpressions(expressions, ExpressionType::DIV);
-    expressions = binaryOpExpressions(expressions, ExpressionType::ADD);
-    expressions = binaryOpExpressions(expressions, ExpressionType::SUB);
+std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
+    std::vector<std::shared_ptr<Expression>> newExpressions = binaryOpExpressions(expressions, ExpressionType::MUL);
+    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::DIV);
+    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::ADD);
+    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::SUB);
     
-    for (const std::shared_ptr<Expression> expression : expressions) {
+    for (const std::shared_ptr<Expression> expression : newExpressions) {
         std::cout << expression->str() << std::endl;
     }
     
-    return expressions;
+    return newExpressions;
 }
 
-std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<std::vector<Token>>& tokenLines) {
+std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines) {
     std::vector<std::vector<std::shared_ptr<Expression>>> expressions;
-    for (const std::vector<Token>& tokenLine : tokenLines) {
-        expressions.push_back(parseLine(tokenLine));
+    for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressionLines) {
+        expressions.push_back(parseLine(expressionLine));
     }
     return expressions;
 }
@@ -224,7 +223,13 @@ int main(int argc, char * argv[]) {
     // basic flow: strings -> tokens -> expressions -> values
     
     std::vector<std::vector<Token>> tokens = tokenize(lines);
-    std::vector<std::vector<std::shared_ptr<Expression>>> expressions = parse(tokens);
+    
+    // box up tokens as expressions and do parsing
+    std::vector<std::vector<std::shared_ptr<Expression>>> expressions;
+    for (const std::vector<Token>& tokenLine : tokens) {
+        expressions.push_back(valueExpressions(tokenLine));
+    }
+    std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
     
     return 0;
 }
