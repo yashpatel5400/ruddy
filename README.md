@@ -1,2 +1,2 @@
 # ruddy
-Rust game engine
+Experimental game engine
