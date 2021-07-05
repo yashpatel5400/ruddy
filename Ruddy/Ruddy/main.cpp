@@ -161,17 +161,19 @@ std::shared_ptr<Expression> valueExpression(Token token) {
     return expression;
 }
 
-std::shared_ptr<Expression> binaryOpExpression(ExpressionType expressionType, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right) {
+std::shared_ptr<Expression> binaryOpExpression(ExpressionType expressionType, std::shared_ptr<Expression> core, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right) {
     std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->token = core->token;
     expression->expressionType = expressionType;
     expression->left = left;
     expression->right = right;
     return expression;
 }
 
-std::shared_ptr<Expression> parenExpression(std::vector<std::shared_ptr<Expression>> core) {
+std::shared_ptr<Expression> parenExpression(std::shared_ptr<Expression> root, std::vector<std::shared_ptr<Expression>> core) {
     std::shared_ptr<Expression> expression = std::make_shared<Expression>();
     expression->expressionType = ExpressionType::PAREN;
+    expression->token = root->token;
     expression->core = parseLine(core);
     return expression;
 }
@@ -195,16 +197,17 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
     bool addingExpression = false;
     for (std::shared_ptr<Expression> expression : expressions) {
         if (addingExpression) {
+            std::shared_ptr<Expression> core = newExpressions.back();
+            newExpressions.pop_back();
             std::shared_ptr<Expression> left = newExpressions.back();
             newExpressions.pop_back();
-            newExpressions.push_back(binaryOpExpression(expressionType, left, expression));
+            newExpressions.push_back(binaryOpExpression(expressionType, core, left, expression));
             addingExpression = false;
         } else {
             if (expression->token.tokenType == tokenType) {
                 addingExpression = true;
-            } else {
-                newExpressions.push_back(expression);
             }
+            newExpressions.push_back(expression);
         }
     }
     return newExpressions;
@@ -217,7 +220,8 @@ std::vector<std::shared_ptr<Expression>> parenExpressions(const std::vector<std:
     for (std::shared_ptr<Expression> expression : expressions) {
         if (addingExpression) {
             if (expression->token.tokenType == TokenType::RIGHT_PAREN) {
-                newExpressions.push_back(parenExpression(currentParenExpression));
+                newExpressions.push_back(parenExpression(expression, currentParenExpression));
+                std::cout << " ----- " << std::endl;
                 addingExpression = false;
             } else {
                 currentParenExpression.push_back(expression);
@@ -236,20 +240,14 @@ std::vector<std::shared_ptr<Expression>> parenExpressions(const std::vector<std:
 
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions = expressions;
-    
+
     newExpressions = parenExpressions(newExpressions);
-    
+
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::MUL);
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::DIV);
-    
+
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::ADD);
     newExpressions = binaryOpExpressions(newExpressions, ExpressionType::SUB);
-    
-    std::cout << " [ ";
-    for (const std::shared_ptr<Expression> expression : newExpressions) {
-        std::cout << expression->str();
-    }
-    std::cout << " ] " << std::endl;
     
     return newExpressions;
 }
@@ -285,6 +283,10 @@ int main(int argc, char * argv[]) {
         expressions.push_back(valueExpressions(tokenLine));
     }
     std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
+    
+    for (const std::shared_ptr<Expression> expression : parsedExpressions[0]) {
+        std::cout << expression->str();
+    }
     
     return 0;
 }
