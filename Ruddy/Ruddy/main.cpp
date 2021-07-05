@@ -13,37 +13,117 @@ std::map<std::string, int> intVariables;
 std::map<std::string, std::string> strVariables;
 
 // --- Evaluator
-int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine) {
+// err, is this the best way? could use union but meh
+enum class ResultType {
+    INT,
+    STR,
+    NONE
+};
+
+struct Result {
+    int resultInt;
+    std::string resultStr;
+    ResultType resultType; // says which to reference
+};
+
+std::string resultTypeToStr(ResultType resultType) {
+    switch(resultType) {
+        case ResultType::INT:  { return "INT"; }
+        case ResultType::STR:  { return "STR"; }
+        case ResultType::NONE: { return "NONE"; }
+    }
+    return "";
+}
+
+bool is_number(const std::string& s) {
+    return !s.empty() && std::find_if(s.begin(),
+        s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+}
+
+Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine) {
+    Result result;
+    result.resultType = ResultType::NONE;
+    
     for (const std::shared_ptr<Expression>& expression : expressionLine) {
         switch(expression->expressionType) {
             case ExpressionType::VALUE: {
                 if (intVariables.find(expression->token.payload) != intVariables.end()) {
-                    return intVariables[expression->token.payload];
+                    result.resultType = ResultType::INT;
+                    result.resultInt  = intVariables[expression->token.payload];
+                } else if (strVariables.find(expression->token.payload) != strVariables.end()) {
+                    result.resultType = ResultType::STR;
+                    result.resultStr  = strVariables[expression->token.payload];
+                } else {
+                    if (is_number(expression->token.payload)) {
+                        result.resultType = ResultType::INT;
+                        result.resultInt  = std::stoi(expression->token.payload);
+                    } else {
+                        result.resultType = ResultType::STR;
+                        result.resultStr  = expression->token.payload;
+                    }
                 }
-                return std::stoi(expression->token.payload);
+                break;
             }
-            case ExpressionType::ADD:    { return evaluateLine({expression->left}) + evaluateLine({expression->right}); }
-            case ExpressionType::SUB:    { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
-            case ExpressionType::MUL:    { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
-            case ExpressionType::DIV:    { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
-            case ExpressionType::PAREN:  { return evaluateLine(expression->core); }
+            case ExpressionType::ADD: {
+                Result addResultLeft = evaluateLine({expression->left});
+                Result addResultRight = evaluateLine({expression->right});
+                
+                if (addResultLeft.resultType == ResultType::INT) {
+                    result.resultType = ResultType::INT;
+                    result.resultInt  = addResultLeft.resultInt + addResultRight.resultInt;
+                } else {
+                    result.resultType = ResultType::STR;
+                    result.resultStr  = addResultLeft.resultStr + addResultRight.resultStr;
+                }
+                break;
+            }
+            case ExpressionType::SUB: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt - evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::MUL: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt * evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::DIV: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt / evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::PAREN:  {
+                return evaluateLine(expression->core);
+            }
             case ExpressionType::PRINT:  {
-                std::cout << evaluateLine(expression->core) << std::endl;
-                return 0;
+                Result printExprResult = evaluateLine(expression->core);
+                if (printExprResult.resultType == ResultType::INT) {
+                    std::cout << printExprResult.resultInt << std::endl;
+                } else {
+                    std::cout << printExprResult.resultStr << std::endl;
+                }
+                break;
             }
             case ExpressionType::STRING: {
-                std::cout << expression->payload->token.payload << std::endl;
-                return 0;
+                result.resultType = ResultType::STR;
+                result.resultStr  = expression->payload->token.payload;
+                break;
             }
-            case ExpressionType::VAR:    {
-                intVariables[expression->var->token.payload] = evaluateLine(expression->core);
-                return 0;
+            case ExpressionType::VAR: {
+                Result varResult = evaluateLine(expression->core);
+                if (varResult.resultType == ResultType::INT) {
+                    intVariables[expression->var->token.payload] = varResult.resultInt;
+                } else {
+                    strVariables[expression->var->token.payload] = varResult.resultStr;
+                }
+
+                break;
             }
             default: break;
         }
     }
     
-    return 0;
+    return result;
 }
 
 void evaluate(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressions) {

@@ -31,7 +31,7 @@ std::string Expression::str() const {
     else if (expressionType == ExpressionType::ADD)   { return "<" + left->str() + "> + <" + right->str() + ">"; }
     else if (expressionType == ExpressionType::SUB)   { return "<" + left->str() + "> - <" + right->str() + ">"; }
     else if (expressionType == ExpressionType::STRING)   { return "\"" + payload->token.payload + "\""; }
-    else if (expressionType == ExpressionType::STRING)   { return "print(" + payload->token.payload + ")"; }
+    else if (expressionType == ExpressionType::PRINT)   { return "print(" + printExpressionType(core[0]->expressionType) + ")"; }
     else if (expressionType == ExpressionType::VAR)   {
         std::string representation;
         representation += var->str();
@@ -196,7 +196,9 @@ std::vector<std::shared_ptr<Expression>> printExpressions(const std::vector<std:
     std::shared_ptr<Expression> rootExpr;
     for (std::shared_ptr<Expression> expression : expressions) {
         if (isPrintExpr) {
-            printExpr.push_back(expression);
+            if (expression->token.tokenType != TokenType::LEFT_PAREN && expression->token.tokenType != TokenType::RIGHT_PAREN) {
+                printExpr.push_back(expression);
+            }
         } else {
             if (expression->token.tokenType == TokenType::WORD && expression->token.payload == "print") {
                 rootExpr = expression;
