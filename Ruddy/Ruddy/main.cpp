@@ -260,6 +260,29 @@ std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<st
     return expressions;
 }
 
+// --- Evaluator
+int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine) {
+    for (const std::shared_ptr<Expression>& expression : expressionLine) {
+        switch(expression->expressionType) {
+            case ExpressionType::VALUE: { return std::stoi(expression->token.payload); }
+            case ExpressionType::ADD:   { return evaluateLine({expression->left}) + evaluateLine({expression->right}); }
+            case ExpressionType::SUB:   { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
+            case ExpressionType::MUL:   { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
+            case ExpressionType::DIV:   { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
+            case ExpressionType::PAREN: { return 0; }
+            default: break;
+        }
+    }
+    
+    return 0;
+}
+
+void evalute(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressions) {
+    for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressions) {
+        std::cout << evaluateLine(expressionLine) << std::endl;
+    }
+}
+
 // --- Tester
 int main(int argc, char * argv[]) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -274,7 +297,6 @@ int main(int argc, char * argv[]) {
     s.close();
     
     // basic flow: strings -> tokens -> expressions -> values
-    
     std::vector<std::vector<Token>> tokens = tokenize(lines);
     
     // box up tokens as expressions and do parsing
@@ -284,9 +306,7 @@ int main(int argc, char * argv[]) {
     }
     std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
     
-    for (const std::shared_ptr<Expression> expression : parsedExpressions[0]) {
-        std::cout << expression->str();
-    }
+    evalute(parsedExpressions);
     
     return 0;
 }
