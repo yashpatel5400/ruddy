@@ -129,6 +129,7 @@ enum class ExpressionType {
     PAREN,
     VAR,
     STRING,
+    PRINT,
 };
 
 std::string printExpressionType(ExpressionType tokenType) {
@@ -140,6 +141,7 @@ std::string printExpressionType(ExpressionType tokenType) {
     else if (tokenType == ExpressionType::PAREN)  { return "PAREN"; }
     else if (tokenType == ExpressionType::PAREN)  { return "VAR"; }
     else if (tokenType == ExpressionType::STRING) { return "STRING"; }
+    else if (tokenType == ExpressionType::PRINT)  { return "PRINT"; }
     else { return "INVALID_EXPRESSION"; }
 }
 
@@ -182,6 +184,7 @@ struct Expression {
         else if (expressionType == ExpressionType::ADD)   { return "<" + left->str() + "> + <" + right->str() + ">"; }
         else if (expressionType == ExpressionType::SUB)   { return "<" + left->str() + "> - <" + right->str() + ">"; }
         else if (expressionType == ExpressionType::STRING)   { return "\"" + payload->token.payload + "\""; }
+        else if (expressionType == ExpressionType::STRING)   { return "print(" + payload->token.payload + ")"; }
         else if (expressionType == ExpressionType::VAR)   {
             std::string representation;
             representation += var->str();
@@ -208,6 +211,14 @@ std::shared_ptr<Expression> binaryOpExpression(ExpressionType expressionType, st
     expression->expressionType = expressionType;
     expression->left = left;
     expression->right = right;
+    return expression;
+}
+
+std::shared_ptr<Expression> printExpression(std::shared_ptr<Expression> root, std::vector<std::shared_ptr<Expression>> core) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::PRINT;
+    expression->token = root->token;
+    expression->core = parseLine(core);
     return expression;
 }
 
@@ -332,6 +343,31 @@ std::vector<std::shared_ptr<Expression>> varExpressions(const std::vector<std::s
     return newExpressions;
 }
 
+std::vector<std::shared_ptr<Expression>> printExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
+    std::vector<std::shared_ptr<Expression>> newExpressions;
+    bool isPrintExpr = false;
+    std::vector<std::shared_ptr<Expression>> printExpr;
+    std::shared_ptr<Expression> rootExpr;
+    for (std::shared_ptr<Expression> expression : expressions) {
+        if (isPrintExpr) {
+            printExpr.push_back(expression);
+        } else {
+            if (expression->token.tokenType == TokenType::WORD && expression->token.payload == "print") {
+                rootExpr = expression;
+                isPrintExpr = true;
+            } else {
+                newExpressions.push_back(expression);
+            }
+        }
+    }
+    
+    if (isPrintExpr) {
+        newExpressions.push_back(printExpression(rootExpr, printExpr));
+    }
+        
+    return newExpressions;
+}
+
 std::vector<std::shared_ptr<Expression>> stringExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions;
     bool isStrExpr = false;
@@ -361,12 +397,10 @@ std::vector<std::shared_ptr<Expression>> stringExpressions(const std::vector<std
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions = expressions;
     
+    newExpressions = printExpressions(newExpressions);
     newExpressions = varExpressions(newExpressions);
-    
     newExpressions = stringExpressions(newExpressions);
-    
     newExpressions = parenExpressions(newExpressions);
-
     newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::MUL, ExpressionType::DIV});
     newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::ADD, ExpressionType::SUB});
     
@@ -396,6 +430,10 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
             case ExpressionType::MUL:    { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
             case ExpressionType::DIV:    { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
             case ExpressionType::PAREN:  { return evaluateLine(expression->core); }
+            case ExpressionType::PRINT:  {
+                std::cout << evaluateLine(expression->core) << std::endl;
+                return 0;
+            }
             case ExpressionType::STRING: {
                 std::cout << expression->payload->token.payload << std::endl;
                 return 0;
@@ -413,17 +451,7 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
 
 void evalute(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressions) {
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressions) {
-        std::cout << evaluateLine(expressionLine) << std::endl;
-    }
-    
-    std::cout << "--- variables ---" << std::endl;
-    std::map<std::string, int>::iterator it;
-    for (it = intVariables.begin(); it != intVariables.end(); it++)
-    {
-        std::cout << it->first    // string (key)
-                  << ':'
-                  << it->second   // string's value
-                  << std::endl;
+        evaluateLine(expressionLine);
     }
 }
 
@@ -459,6 +487,16 @@ int main(int argc, char * argv[]) {
     // }
     
     evalute(parsedExpressions);
+    
+    // std::cout << "--- variables ---" << std::endl;
+    // std::map<std::string, int>::iterator it;
+    // for (it = intVariables.begin(); it != intVariables.end(); it++)
+    // {
+    //     std::cout << it->first    // string (key)
+    //               << ':'
+    //               << it->second   // string's value
+    //               << std::endl;
+    // }
     
     return 0;
 }
