@@ -327,7 +327,12 @@ std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<st
 int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine) {
     for (const std::shared_ptr<Expression>& expression : expressionLine) {
         switch(expression->expressionType) {
-            case ExpressionType::VALUE: { return std::stoi(expression->token.payload); }
+            case ExpressionType::VALUE: {
+                if (variables.find(expression->token.payload) != variables.end()) {
+                    return variables[expression->token.payload];
+                }
+                return std::stoi(expression->token.payload);
+            }
             case ExpressionType::ADD:   { return evaluateLine({expression->left}) + evaluateLine({expression->right}); }
             case ExpressionType::SUB:   { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
             case ExpressionType::MUL:   { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
