@@ -41,6 +41,8 @@ bool is_number(const std::string& s) {
         s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
 
+void evaluate(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressions);
+
 Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine) {
     Result result;
     result.resultType = ResultType::NONE;
@@ -54,6 +56,8 @@ Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLi
                 } else if (strVariables.find(expression->token.payload) != strVariables.end()) {
                     result.resultType = ResultType::STR;
                     result.resultStr  = strVariables[expression->token.payload];
+                } else if (funcExpressions.find(expression->token.payload) != funcExpressions.end()) {
+                    evaluate(funcExpressions[expression->token.payload]);
                 } else {
                     if (is_number(expression->token.payload)) {
                         result.resultType = ResultType::INT;
