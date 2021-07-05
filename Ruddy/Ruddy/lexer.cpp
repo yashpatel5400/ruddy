@@ -24,7 +24,8 @@ std::vector<Token> tokenize_line(const std::string& line) {
     
     std::string curPayload;
     bool inString = false;
-    for (const char c : line) {
+    for (int strIdx = 0; strIdx < line.size(); strIdx++) {
+        char c = line[strIdx];
         if (
             (!inString && (c == ' ' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '\"' || c == '\'')) ||
             (inString  && (c == '\"' || c == '\''))
@@ -32,6 +33,10 @@ std::vector<Token> tokenize_line(const std::string& line) {
             if (curPayload.size() > 0) {
                 tokens.push_back(Token(curPayload));
                 curPayload = std::string();
+            }
+            
+            if (c == '/' && line[strIdx + 1] == '/') {
+                return tokens; // end of line, since rest is comment
             }
             
             if (c != ' ') {
