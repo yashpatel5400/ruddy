@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -45,6 +46,8 @@ struct Expression {
 };
 
 std::vector<std::shared_ptr<Expression>> wrapTokens(const std::vector<Token> tokens);
-std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines);
+void parse(
+           std::map<std::string, std::vector<std::vector<std::shared_ptr<Expression>>>>& funcExpressions,
+           const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines);
 
 #endif /* parser_hpp */

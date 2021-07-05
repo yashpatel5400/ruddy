@@ -11,6 +11,7 @@ DEFINE_string(input_path, "", "Path to test file");
 
 std::map<std::string, int> intVariables;
 std::map<std::string, std::string> strVariables;
+std::map<std::string, std::vector<std::vector<std::shared_ptr<Expression>>>> funcExpressions;
 
 // --- Evaluator
 // err, is this the best way? could use union but meh
@@ -157,13 +158,13 @@ int main(int argc, char * argv[]) {
         
         expressions.push_back(wrapTokens(tokenLine));
     }
-    std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
+    parse(funcExpressions, expressions);
     
     // for (std::shared_ptr<Expression> expression : parsedExpressions[0]) {
     //     std::cout << expression->str() << std::endl;
     // }
     
-    evaluate(parsedExpressions);
+    evaluate(funcExpressions["main"]);
     
     // std::cout << "--- variables ---" << std::endl;
     // std::map<std::string, int>::iterator it;

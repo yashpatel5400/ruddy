@@ -1,5 +1,7 @@
 #include "parser.hpp"
 
+#include <iostream>
+
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions);
 
 std::string printExpressionType(ExpressionType tokenType) {
@@ -255,10 +257,21 @@ std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared
     return newExpressions;
 }
 
-std::vector<std::vector<std::shared_ptr<Expression>>> parse(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines) {
-    std::vector<std::vector<std::shared_ptr<Expression>>> expressions;
+void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Expression>>>>& funcExpressions,
+           const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines) {
+    std::vector<std::vector<std::shared_ptr<Expression>>> curFuncExpressions;
+    std::string funcName;
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressionLines) {
-        expressions.push_back(parseLine(expressionLine));
+        if (expressionLine.size() == 0) { continue; }
+
+        if (expressionLine[0]->token.payload == "fn") {
+            funcName = expressionLine[1]->token.payload;
+        } else if (expressionLine[0]->token.payload == "endfn") {
+            funcExpressions[funcName] = curFuncExpressions;
+            funcName = std::string();
+            curFuncExpressions = std::vector<std::vector<std::shared_ptr<Expression>>>();
+        } else {
+            curFuncExpressions.push_back(parseLine(expressionLine));
+        }
     }
-    return expressions;
 }
