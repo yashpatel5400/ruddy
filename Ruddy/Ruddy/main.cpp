@@ -1,9 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <map>
 
 #include <gflags/gflags.h>
 
 DEFINE_string(input_path, "", "Path to test file");
+
+std::map<std::string, int> variables;
 
 // --- Lexer
 enum class TokenType {
@@ -197,7 +200,7 @@ std::shared_ptr<Expression> parenExpression(std::shared_ptr<Expression> root, st
 std::shared_ptr<Expression> varExpression(std::shared_ptr<Expression> root, std::shared_ptr<Expression> var, std::vector<std::shared_ptr<Expression>> core) {
     std::shared_ptr<Expression> expression = std::make_shared<Expression>();
     expression->token = root->token;
-    expression->var = root;
+    expression->var = var;
     expression->expressionType = ExpressionType::VAR;
     expression->core = parseLine(core);
     return expression;
@@ -330,6 +333,10 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
             case ExpressionType::MUL:   { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
             case ExpressionType::DIV:   { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
             case ExpressionType::PAREN: { return evaluateLine(expression->core); }
+            case ExpressionType::VAR:   {
+                variables[expression->var->token.payload] = evaluateLine(expression->core);
+                return 0;
+            }
             default: break;
         }
     }
@@ -340,6 +347,16 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
 void evalute(const std::vector<std::vector<std::shared_ptr<Expression>>>& expressions) {
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressions) {
         std::cout << evaluateLine(expressionLine) << std::endl;
+    }
+    
+    std::cout << "--- variables ---" << std::endl;
+    std::map<std::string, int>::iterator it;
+    for (it = variables.begin(); it != variables.end(); it++)
+    {
+        std::cout << it->first    // string (key)
+                  << ':'
+                  << it->second   // string's value
+                  << std::endl;
     }
 }
 
@@ -369,8 +386,6 @@ int main(int argc, char * argv[]) {
         expressions.push_back(valueExpressions(tokenLine));
     }
     std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
-    
-    std::cout << parsedExpressions[0][0]->str() << std::endl;
     
     evalute(parsedExpressions);
     
