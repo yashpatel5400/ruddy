@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0401CBC526933CE100FF5D0F /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0401CBC326933CE100FF5D0F /* parser.cpp */; };
+		0401CBC826933DD500FF5D0F /* lexer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0401CBC626933DD500FF5D0F /* lexer.cpp */; };
 		04A23C352691626200E8E448 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04A23C342691626200E8E448 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0401CBC326933CE100FF5D0F /* parser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
+		0401CBC426933CE100FF5D0F /* parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		0401CBC626933DD500FF5D0F /* lexer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = lexer.cpp; sourceTree = "<group>"; };
+		0401CBC726933DD500FF5D0F /* lexer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = lexer.hpp; sourceTree = "<group>"; };
 		04A23C312691626200E8E448 /* Ruddy */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ruddy; sourceTree = BUILT_PRODUCTS_DIR; };
 		04A23C342691626200E8E448 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,6 +64,10 @@
 			isa = PBXGroup;
 			children = (
 				04A23C342691626200E8E448 /* main.cpp */,
+				0401CBC326933CE100FF5D0F /* parser.cpp */,
+				0401CBC426933CE100FF5D0F /* parser.hpp */,
+				0401CBC626933DD500FF5D0F /* lexer.cpp */,
+				0401CBC726933DD500FF5D0F /* lexer.hpp */,
 			);
 			path = Ruddy;
 			sourceTree = "<group>";
@@ -118,7 +128,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0401CBC526933CE100FF5D0F /* parser.cpp in Sources */,
 				04A23C352691626200E8E448 /* main.cpp in Sources */,
+				0401CBC826933DD500FF5D0F /* lexer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
