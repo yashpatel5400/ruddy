@@ -1,10 +1,17 @@
 #include "lexer.hpp"
 
+#include <iostream>
+
 std::string printTokenType(TokenType tokenType) {
          if (tokenType == TokenType::ADD) { return "ADD"; }
     else if (tokenType == TokenType::SUB) { return "SUB"; }
     else if (tokenType == TokenType::MUL) { return "MUL"; }
     else if (tokenType == TokenType::DIV) { return "DIV"; }
+    else if (tokenType == TokenType::IS_LESS) { return "IS_LESS"; }
+    else if (tokenType == TokenType::IS_LEQ) { return "IS_LEQ"; }
+    else if (tokenType == TokenType::IS_GREATER) { return "IS_GREATER"; }
+    else if (tokenType == TokenType::IS_GEQ) { return "IS_GEQ"; }
+    else if (tokenType == TokenType::IS_EQ) { return "IS_EQ"; }
     else if (tokenType == TokenType::EQUAL) { return "EQUAL"; }
     else if (tokenType == TokenType::LEFT_PAREN) { return "LEFT_PAREN"; }
     else if (tokenType == TokenType::RIGHT_PAREN) { return "RIGHT_PAREN"; }
@@ -24,10 +31,12 @@ std::vector<Token> tokenize_line(const std::string& line) {
     
     std::string curPayload;
     bool inString = false;
-    for (int strIdx = 0; strIdx < line.size(); strIdx++) {
+    
+    int strIdx = 0;
+    while(strIdx < line.size()) {
         char c = line[strIdx];
         if (
-            (!inString && (c == ' ' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '\"' || c == '\'')) ||
+            (!inString && (c == ' ' || c == '>' || c == '<' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '\"' || c == '\'')) ||
             (inString  && (c == '\"' || c == '\''))
            ) {
             if (curPayload.size() > 0) {
@@ -42,6 +51,12 @@ std::vector<Token> tokenize_line(const std::string& line) {
             if (c != ' ') {
                 std::string temp;
                 temp += c;
+                
+                if ((c == '>' || c == '<' || c == '=') && line[strIdx + 1] == '=') {
+                    temp += line[strIdx + 1];
+                    strIdx++;
+                }
+                
                 tokens.push_back(Token(temp));
             }
             
@@ -51,6 +66,8 @@ std::vector<Token> tokenize_line(const std::string& line) {
         } else {
             curPayload += c;
         }
+        
+        strIdx++;
     }
     
     if (curPayload.size() > 0) {

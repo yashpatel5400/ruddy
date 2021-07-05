@@ -11,6 +11,11 @@ enum class TokenType {
     SUB,
     MUL,
     DIV,
+    IS_LESS,
+    IS_LEQ,
+    IS_GREATER,
+    IS_GEQ,
+    IS_EQ,
     EQUAL,
     LEFT_PAREN,
     RIGHT_PAREN,
@@ -32,6 +37,11 @@ struct Token {
         else if (s == "*")  { tokenType = TokenType::MUL; }
         else if (s == "/")  { tokenType = TokenType::DIV; }
         else if (s == "=")  { tokenType = TokenType::EQUAL; }
+        else if (s == "<")  { tokenType = TokenType::IS_LESS; }
+        else if (s == "<=") { tokenType = TokenType::IS_LEQ; }
+        else if (s == ">")  { tokenType = TokenType::IS_GREATER; }
+        else if (s == ">=") { tokenType = TokenType::IS_GEQ; }
+        else if (s == "==") { tokenType = TokenType::IS_EQ; }
         else if (s == "(")  { tokenType = TokenType::LEFT_PAREN; }
         else if (s == ")")  { tokenType = TokenType::RIGHT_PAREN; }
         else if (s == "\"") { tokenType = TokenType::DOUBLE_QUOTE; }

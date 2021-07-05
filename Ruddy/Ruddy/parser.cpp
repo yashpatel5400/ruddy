@@ -5,15 +5,20 @@
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions);
 
 std::string printExpressionType(ExpressionType tokenType) {
-         if (tokenType == ExpressionType::VALUE)  { return "VALUE"; }
-    else if (tokenType == ExpressionType::ADD)    { return "ADD"; }
-    else if (tokenType == ExpressionType::SUB)    { return "SUB"; }
-    else if (tokenType == ExpressionType::MUL)    { return "MUL"; }
-    else if (tokenType == ExpressionType::DIV)    { return "DIV"; }
-    else if (tokenType == ExpressionType::PAREN)  { return "PAREN"; }
-    else if (tokenType == ExpressionType::PAREN)  { return "VAR"; }
-    else if (tokenType == ExpressionType::STRING) { return "STRING"; }
-    else if (tokenType == ExpressionType::PRINT)  { return "PRINT"; }
+         if (tokenType == ExpressionType::VALUE)      { return "VALUE"; }
+    else if (tokenType == ExpressionType::ADD)        { return "ADD"; }
+    else if (tokenType == ExpressionType::SUB)        { return "SUB"; }
+    else if (tokenType == ExpressionType::MUL)        { return "MUL"; }
+    else if (tokenType == ExpressionType::DIV)        { return "DIV"; }
+    else if (tokenType == ExpressionType::IS_LESS)    { return "IS_LESS"; }
+    else if (tokenType == ExpressionType::IS_LEQ)     { return "IS_LEQ"; }
+    else if (tokenType == ExpressionType::IS_GREATER) { return "IS_GREATER"; }
+    else if (tokenType == ExpressionType::IS_GEQ)     { return "IS_GEQ"; }
+    else if (tokenType == ExpressionType::IS_EQ)      { return "IS_EQ"; }
+    else if (tokenType == ExpressionType::PAREN)      { return "PAREN"; }
+    else if (tokenType == ExpressionType::PAREN)      { return "VAR"; }
+    else if (tokenType == ExpressionType::STRING)     { return "STRING"; }
+    else if (tokenType == ExpressionType::PRINT)      { return "PRINT"; }
     else { return "INVALID_EXPRESSION"; }
 }
 
@@ -28,12 +33,17 @@ std::string Expression::str() const {
         representation += ")";
         return representation;
     }
-    else if (expressionType == ExpressionType::MUL)   { return "<" + left->str() + "> * <" + right->str() + ">"; }
-    else if (expressionType == ExpressionType::DIV)   { return "<" + left->str() + "> / <" + right->str() + ">"; }
-    else if (expressionType == ExpressionType::ADD)   { return "<" + left->str() + "> + <" + right->str() + ">"; }
-    else if (expressionType == ExpressionType::SUB)   { return "<" + left->str() + "> - <" + right->str() + ">"; }
-    else if (expressionType == ExpressionType::STRING)   { return "\"" + payload->token.payload + "\""; }
-    else if (expressionType == ExpressionType::PRINT)   { return "print(" + printExpressionType(core[0]->expressionType) + ")"; }
+    else if (expressionType == ExpressionType::MUL)        { return "<" + left->str() + "> * <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::DIV)        { return "<" + left->str() + "> / <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::ADD)        { return "<" + left->str() + "> + <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::SUB)        { return "<" + left->str() + "> - <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::IS_LESS)    { return "<" + left->str() + "> < <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::IS_LEQ)     { return "<" + left->str() + "> <= <" + right->str() + ">"; }
+    else if (expressionType == ExpressionType::IS_GREATER) { return "<" + left->str() + "> > <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::IS_GEQ)     { return "<" + left->str() + "> >= <" + right->str() + ">"; }
+    else if (expressionType == ExpressionType::IS_EQ)      { return "<" + left->str() + "> == <" + right->str() + ">"; }
+    else if (expressionType == ExpressionType::STRING)     { return "\"" + payload->token.payload + "\""; }
+    else if (expressionType == ExpressionType::PRINT)      { return "print(" + printExpressionType(core[0]->expressionType) + ")"; }
     else if (expressionType == ExpressionType::VAR)   {
         std::string representation;
         representation += var->str();
@@ -107,10 +117,15 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
     
     std::vector<TokenType> tokenTypes;
     for (ExpressionType expressionType : expressionTypes) {
-        if (expressionType == ExpressionType::ADD) { tokenTypes.push_back(TokenType::ADD); }
-        if (expressionType == ExpressionType::SUB) { tokenTypes.push_back(TokenType::SUB); }
-        if (expressionType == ExpressionType::MUL) { tokenTypes.push_back(TokenType::MUL); }
-        if (expressionType == ExpressionType::DIV) { tokenTypes.push_back(TokenType::DIV); }
+        if (expressionType == ExpressionType::ADD)        { tokenTypes.push_back(TokenType::ADD); }
+        if (expressionType == ExpressionType::SUB)        { tokenTypes.push_back(TokenType::SUB); }
+        if (expressionType == ExpressionType::MUL)        { tokenTypes.push_back(TokenType::MUL); }
+        if (expressionType == ExpressionType::DIV)        { tokenTypes.push_back(TokenType::DIV); }
+        if (expressionType == ExpressionType::IS_LESS)    { tokenTypes.push_back(TokenType::IS_LESS); }
+        if (expressionType == ExpressionType::IS_LEQ)     { tokenTypes.push_back(TokenType::IS_LEQ); }
+        if (expressionType == ExpressionType::IS_GREATER) { tokenTypes.push_back(TokenType::IS_GREATER); }
+        if (expressionType == ExpressionType::IS_GEQ)     { tokenTypes.push_back(TokenType::IS_GEQ); }
+        if (expressionType == ExpressionType::IS_EQ)      { tokenTypes.push_back(TokenType::IS_EQ); }
     }
     
     std::vector<std::shared_ptr<Expression>> newExpressions;
@@ -128,10 +143,15 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
             for (TokenType tokenType : tokenTypes) {
                 if (expression->token.tokenType == tokenType) {
                     addingExpression = true;
-                    if (tokenType == TokenType::ADD) { expressionType = ExpressionType::ADD; }
-                    if (tokenType == TokenType::SUB) { expressionType = ExpressionType::SUB; }
-                    if (tokenType == TokenType::MUL) { expressionType = ExpressionType::MUL; }
-                    if (tokenType == TokenType::DIV) { expressionType = ExpressionType::DIV; }
+                    if (tokenType == TokenType::ADD)        { expressionType = ExpressionType::ADD; }
+                    if (tokenType == TokenType::SUB)        { expressionType = ExpressionType::SUB; }
+                    if (tokenType == TokenType::MUL)        { expressionType = ExpressionType::MUL; }
+                    if (tokenType == TokenType::DIV)        { expressionType = ExpressionType::DIV; }
+                    if (tokenType == TokenType::IS_LESS)    { expressionType = ExpressionType::IS_LESS; }
+                    if (tokenType == TokenType::IS_LEQ)     { expressionType = ExpressionType::IS_LEQ; }
+                    if (tokenType == TokenType::IS_GREATER) { expressionType = ExpressionType::IS_GREATER; }
+                    if (tokenType == TokenType::IS_GEQ)     { expressionType = ExpressionType::IS_GEQ; }
+                    if (tokenType == TokenType::IS_EQ)      { expressionType = ExpressionType::IS_EQ; }
                 }
             }
             
@@ -253,6 +273,9 @@ std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared
     newExpressions = parenExpressions(newExpressions);
     newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::MUL, ExpressionType::DIV});
     newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::ADD, ExpressionType::SUB});
+    newExpressions = binaryOpExpressions(newExpressions, {
+        ExpressionType::IS_LESS, ExpressionType::IS_LEQ, ExpressionType::IS_GREATER, ExpressionType::IS_GEQ, ExpressionType::IS_EQ
+    });
     
     return newExpressions;
 }

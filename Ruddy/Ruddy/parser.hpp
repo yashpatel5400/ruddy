@@ -19,6 +19,11 @@ enum class ExpressionType {
     VAR,
     STRING,
     PRINT,
+    IS_LESS,
+    IS_LEQ,
+    IS_GREATER,
+    IS_GEQ,
+    IS_EQ,
 };
 
 struct Expression {

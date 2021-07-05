@@ -97,6 +97,31 @@ Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLi
                 result.resultInt  = evaluateLine({expression->left}).resultInt / evaluateLine({expression->right}).resultInt;
                 break;
             }
+            case ExpressionType::IS_LESS: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt < evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::IS_LEQ: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt <= evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::IS_GREATER: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt > evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::IS_GEQ: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt >= evaluateLine({expression->right}).resultInt;
+                break;
+            }
+            case ExpressionType::IS_EQ: {
+                result.resultType = ResultType::INT;
+                result.resultInt  = evaluateLine({expression->left}).resultInt == evaluateLine({expression->right}).resultInt;
+                break;
+            }
             case ExpressionType::PAREN:  {
                 return evaluateLine(expression->core);
             }
@@ -164,7 +189,7 @@ int main(int argc, char * argv[]) {
     }
     parse(funcExpressions, expressions);
     
-    // for (std::shared_ptr<Expression> expression : parsedExpressions[0]) {
+    // for (std::shared_ptr<Expression> expression : funcExpressions["main"][0]) {
     //     std::cout << expression->str() << std::endl;
     // }
     

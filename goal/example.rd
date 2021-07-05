@@ -1,6 +1,6 @@
-// this is a test
 fn test
-    x = 3 // this is a comment
+// asdf this is 
+    x = 3 
     y = 5 * 1 + 2
 
     z = "hello world"
@@ -13,5 +13,4 @@ endfn
 
 fn main
     test
-    print("exit main")
 endfn 
