@@ -186,15 +186,19 @@ std::vector<std::shared_ptr<Expression>> valueExpressions(const std::vector<Toke
     return expressions;
 }
 
-std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<std::shared_ptr<Expression>> expressions, ExpressionType expressionType) {
-    TokenType tokenType;
-    if (expressionType == ExpressionType::ADD) { tokenType = TokenType::ADD; }
-    if (expressionType == ExpressionType::SUB) { tokenType = TokenType::SUB; }
-    if (expressionType == ExpressionType::MUL) { tokenType = TokenType::MUL; }
-    if (expressionType == ExpressionType::DIV) { tokenType = TokenType::DIV; }
+std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<std::shared_ptr<Expression>> expressions, std::vector<ExpressionType> expressionTypes) {
+    
+    std::vector<TokenType> tokenTypes;
+    for (ExpressionType expressionType : expressionTypes) {
+        if (expressionType == ExpressionType::ADD) { tokenTypes.push_back(TokenType::ADD); }
+        if (expressionType == ExpressionType::SUB) { tokenTypes.push_back(TokenType::SUB); }
+        if (expressionType == ExpressionType::MUL) { tokenTypes.push_back(TokenType::MUL); }
+        if (expressionType == ExpressionType::DIV) { tokenTypes.push_back(TokenType::DIV); }
+    }
     
     std::vector<std::shared_ptr<Expression>> newExpressions;
     bool addingExpression = false;
+    ExpressionType expressionType;
     for (std::shared_ptr<Expression> expression : expressions) {
         if (addingExpression) {
             std::shared_ptr<Expression> core = newExpressions.back();
@@ -204,9 +208,16 @@ std::vector<std::shared_ptr<Expression>> binaryOpExpressions(const std::vector<s
             newExpressions.push_back(binaryOpExpression(expressionType, core, left, expression));
             addingExpression = false;
         } else {
-            if (expression->token.tokenType == tokenType) {
-                addingExpression = true;
+            for (TokenType tokenType : tokenTypes) {
+                if (expression->token.tokenType == tokenType) {
+                    addingExpression = true;
+                    if (tokenType == TokenType::ADD) { expressionType = ExpressionType::ADD; }
+                    if (tokenType == TokenType::SUB) { expressionType = ExpressionType::SUB; }
+                    if (tokenType == TokenType::MUL) { expressionType = ExpressionType::MUL; }
+                    if (tokenType == TokenType::DIV) { expressionType = ExpressionType::DIV; }
+                }
             }
+            
             newExpressions.push_back(expression);
         }
     }
@@ -243,11 +254,8 @@ std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared
 
     newExpressions = parenExpressions(newExpressions);
 
-    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::MUL);
-    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::DIV);
-
-    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::ADD);
-    newExpressions = binaryOpExpressions(newExpressions, ExpressionType::SUB);
+    newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::MUL, ExpressionType::DIV});
+    newExpressions = binaryOpExpressions(newExpressions, {ExpressionType::ADD, ExpressionType::SUB});
     
     return newExpressions;
 }
