@@ -6,7 +6,8 @@
 
 DEFINE_string(input_path, "", "Path to test file");
 
-std::map<std::string, int> variables;
+std::map<std::string, int> intVariables;
+std::map<std::string, std::string> strVariables;
 
 // --- Lexer
 enum class TokenType {
@@ -17,6 +18,8 @@ enum class TokenType {
     EQUAL,
     LEFT_PAREN,
     RIGHT_PAREN,
+    DOUBLE_QUOTE,
+    SINGLE_QUOTE,
     WORD,
     NUMBER
 };
@@ -29,6 +32,8 @@ std::string printTokenType(TokenType tokenType) {
     else if (tokenType == TokenType::EQUAL) { return "EQUAL"; }
     else if (tokenType == TokenType::LEFT_PAREN) { return "LEFT_PAREN"; }
     else if (tokenType == TokenType::RIGHT_PAREN) { return "RIGHT_PAREN"; }
+    else if (tokenType == TokenType::DOUBLE_QUOTE) { return "DOUBLE_QUOTE"; }
+    else if (tokenType == TokenType::SINGLE_QUOTE) { return "SINGLE_QUOTE"; }
     else if (tokenType == TokenType::WORD) { return "WORD"; }
     else if (tokenType == TokenType::NUMBER) { return "NUMBER"; }
     else { return "INVALID_TOKEN"; }
@@ -41,13 +46,15 @@ struct Token {
     Token() : payload("") {}
     
     Token(const std::string& s) : payload(s) {
-             if (s == "+") { tokenType = TokenType::ADD; }
-        else if (s == "-") { tokenType = TokenType::SUB; }
-        else if (s == "*") { tokenType = TokenType::MUL; }
-        else if (s == "/") { tokenType = TokenType::DIV; }
-        else if (s == "=") { tokenType = TokenType::EQUAL; }
-        else if (s == "(") { tokenType = TokenType::LEFT_PAREN; }
-        else if (s == ")") { tokenType = TokenType::RIGHT_PAREN; }
+             if (s == "+")  { tokenType = TokenType::ADD; }
+        else if (s == "-")  { tokenType = TokenType::SUB; }
+        else if (s == "*")  { tokenType = TokenType::MUL; }
+        else if (s == "/")  { tokenType = TokenType::DIV; }
+        else if (s == "=")  { tokenType = TokenType::EQUAL; }
+        else if (s == "(")  { tokenType = TokenType::LEFT_PAREN; }
+        else if (s == ")")  { tokenType = TokenType::RIGHT_PAREN; }
+        else if (s == "\"") { tokenType = TokenType::DOUBLE_QUOTE; }
+        else if (s == "'")  { tokenType = TokenType::SINGLE_QUOTE; }
         else if (std::isdigit(s[0])) { tokenType = TokenType::NUMBER; }
         else { tokenType = TokenType::WORD; }
     }
@@ -61,8 +68,12 @@ std::vector<Token> tokenize_line(const std::string& line) {
     std::vector<Token> tokens;
     
     std::string curPayload;
+    bool inString = false;
     for (const char c : line) {
-        if (c == ' ' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')') {
+        if (
+            (!inString && (c == ' ' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '\"' || c == '\'')) ||
+            (inString  && (c == '\"' || c == '\''))
+           ) {
             if (curPayload.size() > 0) {
                 tokens.push_back(Token(curPayload));
                 curPayload = std::string();
@@ -72,6 +83,10 @@ std::vector<Token> tokenize_line(const std::string& line) {
                 std::string temp;
                 temp += c;
                 tokens.push_back(Token(temp));
+            }
+            
+            if (c == '\"' || c == '\'') {
+                inString = !inString;
             }
         } else {
             curPayload += c;
@@ -113,15 +128,18 @@ enum class ExpressionType {
     DIV,
     PAREN,
     VAR,
+    STRING,
 };
 
 std::string printExpressionType(ExpressionType tokenType) {
-         if (tokenType == ExpressionType::VALUE) { return "VALUE"; }
-    else if (tokenType == ExpressionType::ADD)   { return "ADD"; }
-    else if (tokenType == ExpressionType::SUB)   { return "SUB"; }
-    else if (tokenType == ExpressionType::MUL)   { return "MUL"; }
-    else if (tokenType == ExpressionType::DIV)   { return "DIV"; }
-    else if (tokenType == ExpressionType::PAREN) { return "PAREN"; }
+         if (tokenType == ExpressionType::VALUE)  { return "VALUE"; }
+    else if (tokenType == ExpressionType::ADD)    { return "ADD"; }
+    else if (tokenType == ExpressionType::SUB)    { return "SUB"; }
+    else if (tokenType == ExpressionType::MUL)    { return "MUL"; }
+    else if (tokenType == ExpressionType::DIV)    { return "DIV"; }
+    else if (tokenType == ExpressionType::PAREN)  { return "PAREN"; }
+    else if (tokenType == ExpressionType::PAREN)  { return "VAR"; }
+    else if (tokenType == ExpressionType::STRING) { return "STRING"; }
     else { return "INVALID_EXPRESSION"; }
 }
 
@@ -132,6 +150,9 @@ struct Expression {
     
     // value tokens
     Token token;
+    
+    // variable setting
+    std::shared_ptr<Expression> payload;
     
     // variable setting
     std::shared_ptr<Expression> var;
@@ -160,6 +181,7 @@ struct Expression {
         else if (expressionType == ExpressionType::DIV)   { return "<" + left->str() + "> / <" + right->str() + ">"; }
         else if (expressionType == ExpressionType::ADD)   { return "<" + left->str() + "> + <" + right->str() + ">"; }
         else if (expressionType == ExpressionType::SUB)   { return "<" + left->str() + "> - <" + right->str() + ">"; }
+        else if (expressionType == ExpressionType::STRING)   { return "\"" + payload->token.payload + "\""; }
         else if (expressionType == ExpressionType::VAR)   {
             std::string representation;
             representation += var->str();
@@ -203,6 +225,14 @@ std::shared_ptr<Expression> varExpression(std::shared_ptr<Expression> root, std:
     expression->var = var;
     expression->expressionType = ExpressionType::VAR;
     expression->core = parseLine(core);
+    return expression;
+}
+
+std::shared_ptr<Expression> strExpression(std::shared_ptr<Expression> root, std::shared_ptr<Expression> payload) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::STRING;
+    expression->token = root->token;
+    expression->payload = payload;
     return expression;
 }
 
@@ -302,10 +332,38 @@ std::vector<std::shared_ptr<Expression>> varExpressions(const std::vector<std::s
     return newExpressions;
 }
 
+std::vector<std::shared_ptr<Expression>> stringExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
+    std::vector<std::shared_ptr<Expression>> newExpressions;
+    bool isStrExpr = false;
+    std::vector<std::shared_ptr<Expression>> strExpr;
+    for (std::shared_ptr<Expression> expression : expressions) {
+        if (isStrExpr) {
+            if (expression->token.tokenType == TokenType::DOUBLE_QUOTE) {
+                // strExpr should always only be 1 long
+                newExpressions.push_back(strExpression(expression, strExpr[0]));
+                isStrExpr = false;
+            } else {
+                strExpr.push_back(expression);
+            }
+        } else {
+            if (expression->token.tokenType == TokenType::DOUBLE_QUOTE) {
+                isStrExpr = true;
+                strExpr = std::vector<std::shared_ptr<Expression>>();
+            } else {
+                newExpressions.push_back(expression);
+            }
+        }
+    }
+    
+    return newExpressions;
+}
+
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions = expressions;
     
     newExpressions = varExpressions(newExpressions);
+    
+    newExpressions = stringExpressions(newExpressions);
     
     newExpressions = parenExpressions(newExpressions);
 
@@ -328,18 +386,22 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
     for (const std::shared_ptr<Expression>& expression : expressionLine) {
         switch(expression->expressionType) {
             case ExpressionType::VALUE: {
-                if (variables.find(expression->token.payload) != variables.end()) {
-                    return variables[expression->token.payload];
+                if (intVariables.find(expression->token.payload) != intVariables.end()) {
+                    return intVariables[expression->token.payload];
                 }
                 return std::stoi(expression->token.payload);
             }
-            case ExpressionType::ADD:   { return evaluateLine({expression->left}) + evaluateLine({expression->right}); }
-            case ExpressionType::SUB:   { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
-            case ExpressionType::MUL:   { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
-            case ExpressionType::DIV:   { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
-            case ExpressionType::PAREN: { return evaluateLine(expression->core); }
-            case ExpressionType::VAR:   {
-                variables[expression->var->token.payload] = evaluateLine(expression->core);
+            case ExpressionType::ADD:    { return evaluateLine({expression->left}) + evaluateLine({expression->right}); }
+            case ExpressionType::SUB:    { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
+            case ExpressionType::MUL:    { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
+            case ExpressionType::DIV:    { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
+            case ExpressionType::PAREN:  { return evaluateLine(expression->core); }
+            case ExpressionType::STRING: {
+                std::cout << expression->payload->token.payload << std::endl;
+                return 0;
+            }
+            case ExpressionType::VAR:    {
+                intVariables[expression->var->token.payload] = evaluateLine(expression->core);
                 return 0;
             }
             default: break;
@@ -356,7 +418,7 @@ void evalute(const std::vector<std::vector<std::shared_ptr<Expression>>>& expres
     
     std::cout << "--- variables ---" << std::endl;
     std::map<std::string, int>::iterator it;
-    for (it = variables.begin(); it != variables.end(); it++)
+    for (it = intVariables.begin(); it != intVariables.end(); it++)
     {
         std::cout << it->first    // string (key)
                   << ':'
@@ -391,6 +453,10 @@ int main(int argc, char * argv[]) {
         expressions.push_back(valueExpressions(tokenLine));
     }
     std::vector<std::vector<std::shared_ptr<Expression>>> parsedExpressions = parse(expressions);
+    
+    // for (std::shared_ptr<Expression> expression : parsedExpressions[0]) {
+    //     std::cout << expression->str() << std::endl;
+    // }
     
     evalute(parsedExpressions);
     
