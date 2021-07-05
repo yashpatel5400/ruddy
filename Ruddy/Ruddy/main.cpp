@@ -232,7 +232,6 @@ std::vector<std::shared_ptr<Expression>> parenExpressions(const std::vector<std:
         if (addingExpression) {
             if (expression->token.tokenType == TokenType::RIGHT_PAREN) {
                 newExpressions.push_back(parenExpression(expression, currentParenExpression));
-                std::cout << " ----- " << std::endl;
                 addingExpression = false;
             } else {
                 currentParenExpression.push_back(expression);
@@ -277,7 +276,7 @@ int evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLine)
             case ExpressionType::SUB:   { return evaluateLine({expression->left}) - evaluateLine({expression->right}); }
             case ExpressionType::MUL:   { return evaluateLine({expression->left}) * evaluateLine({expression->right}); }
             case ExpressionType::DIV:   { return evaluateLine({expression->left}) / evaluateLine({expression->right}); }
-            case ExpressionType::PAREN: { return 0; }
+            case ExpressionType::PAREN: { return evaluateLine(expression->core); }
             default: break;
         }
     }
