@@ -12,5 +12,12 @@ fn test
 endfn
 
 fn main
-    test
+    x = 3
+    y = 4
+
+    print(x)
+
+    if x < y
+        test
+    endif
 endfn 

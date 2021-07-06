@@ -97,6 +97,13 @@ Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLi
                 result.resultInt  = evaluateLine({expression->left}).resultInt / evaluateLine({expression->right}).resultInt;
                 break;
             }
+            case ExpressionType::IF: {
+                Result boolResult = evaluateLine({expression->conditional});
+                if (boolResult.resultInt) {
+                    evaluate(expression->ifStatements);
+                }
+                break;
+            }
             case ExpressionType::IS_LESS: {
                 result.resultType = ResultType::INT;
                 result.resultInt  = evaluateLine({expression->left}).resultInt < evaluateLine({expression->right}).resultInt;
@@ -189,8 +196,10 @@ int main(int argc, char * argv[]) {
     }
     parse(funcExpressions, expressions);
     
-    // for (std::shared_ptr<Expression> expression : funcExpressions["main"][0]) {
-    //     std::cout << expression->str() << std::endl;
+    // for (std::vector<std::shared_ptr<Expression>> expressions : funcExpressions["main"]) {
+    //     for (std::shared_ptr<Expression> expression : expressions) {
+    //         std::cout << expression->str() << std::endl;
+    //     }
     // }
     
     evaluate(funcExpressions["main"]);

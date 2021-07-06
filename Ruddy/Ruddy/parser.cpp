@@ -10,6 +10,7 @@ std::string printExpressionType(ExpressionType tokenType) {
     else if (tokenType == ExpressionType::SUB)        { return "SUB"; }
     else if (tokenType == ExpressionType::MUL)        { return "MUL"; }
     else if (tokenType == ExpressionType::DIV)        { return "DIV"; }
+    else if (tokenType == ExpressionType::IF)         { return "IF"; }
     else if (tokenType == ExpressionType::IS_LESS)    { return "IS_LESS"; }
     else if (tokenType == ExpressionType::IS_LEQ)     { return "IS_LEQ"; }
     else if (tokenType == ExpressionType::IS_GREATER) { return "IS_GREATER"; }
@@ -37,6 +38,20 @@ std::string Expression::str() const {
     else if (expressionType == ExpressionType::DIV)        { return "<" + left->str() + "> / <" + right->str() + ">";  }
     else if (expressionType == ExpressionType::ADD)        { return "<" + left->str() + "> + <" + right->str() + ">";  }
     else if (expressionType == ExpressionType::SUB)        { return "<" + left->str() + "> - <" + right->str() + ">";  }
+    else if (expressionType == ExpressionType::IF)         {
+        std::string representation;
+        representation = "if ";
+        representation += conditional->str();
+        representation += '\n';
+        for (std::vector<std::shared_ptr<Expression>> expressions : ifStatements) {
+            for (std::shared_ptr<Expression> expression : expressions) {
+                representation += expression->str();
+            }
+            representation += '\n';
+        }
+        
+        return representation;
+    }
     else if (expressionType == ExpressionType::IS_LESS)    { return "<" + left->str() + "> < <" + right->str() + ">";  }
     else if (expressionType == ExpressionType::IS_LEQ)     { return "<" + left->str() + "> <= <" + right->str() + ">"; }
     else if (expressionType == ExpressionType::IS_GREATER) { return "<" + left->str() + "> > <" + right->str() + ">";  }
@@ -77,6 +92,15 @@ std::shared_ptr<Expression> printExpression(std::shared_ptr<Expression> root, st
     expression->expressionType = ExpressionType::PRINT;
     expression->token = root->token;
     expression->core = parseLine(core);
+    return expression;
+}
+
+std::shared_ptr<Expression> ifExpression(std::shared_ptr<Expression> root, std::shared_ptr<Expression> conditional, std::vector<std::vector<std::shared_ptr<Expression>>> ifStatements) {
+    std::shared_ptr<Expression> expression = std::make_shared<Expression>();
+    expression->expressionType = ExpressionType::IF;
+    expression->token = root->token;
+    expression->conditional = conditional;
+    expression->ifStatements = ifStatements;
     return expression;
 }
 
@@ -238,6 +262,35 @@ std::vector<std::shared_ptr<Expression>> printExpressions(const std::vector<std:
     return newExpressions;
 }
 
+std::vector<std::shared_ptr<Expression>> reservedWordExpressions(const std::vector<std::shared_ptr<Expression>> expressions, const std::string& reserved) {
+    std::vector<std::shared_ptr<Expression>> newExpressions;
+    bool isExpr = false;
+    std::vector<std::shared_ptr<Expression>> expr;
+    std::shared_ptr<Expression> rootExpr;
+    for (std::shared_ptr<Expression> expression : expressions) {
+        if (isExpr) {
+            if (expression->token.tokenType != TokenType::LEFT_PAREN && expression->token.tokenType != TokenType::RIGHT_PAREN) {
+                expr.push_back(expression);
+            }
+        } else {
+            if (expression->token.tokenType == TokenType::WORD && expression->token.payload == reserved) {
+                rootExpr = expression;
+                isExpr = true;
+            } else {
+                newExpressions.push_back(expression);
+            }
+        }
+    }
+    
+    if (isExpr) {
+        std::shared_ptr<Expression> newExpression;
+        if (reserved == "print") { newExpression = printExpression(rootExpr, expr); }
+        newExpressions.push_back(newExpression);
+    }
+        
+    return newExpressions;
+}
+
 std::vector<std::shared_ptr<Expression>> stringExpressions(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions;
     bool isStrExpr = false;
@@ -267,7 +320,7 @@ std::vector<std::shared_ptr<Expression>> stringExpressions(const std::vector<std
 std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared_ptr<Expression>> expressions) {
     std::vector<std::shared_ptr<Expression>> newExpressions = expressions;
     
-    newExpressions = printExpressions(newExpressions);
+    newExpressions = reservedWordExpressions(newExpressions, "print");
     newExpressions = varExpressions(newExpressions);
     newExpressions = stringExpressions(newExpressions);
     newExpressions = parenExpressions(newExpressions);
@@ -283,6 +336,12 @@ std::vector<std::shared_ptr<Expression>> parseLine(const std::vector<std::shared
 void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Expression>>>>& funcExpressions,
            const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines) {
     std::vector<std::vector<std::shared_ptr<Expression>>> curFuncExpressions;
+
+    std::vector<std::vector<std::shared_ptr<Expression>>> curIfExpressions;
+    std::shared_ptr<Expression> ifExpressionRoot;
+    std::shared_ptr<Expression> ifExpressionConditional;
+    bool inIf = false;
+    
     std::string funcName;
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressionLines) {
         if (expressionLine.size() == 0) { continue; }
@@ -293,8 +352,25 @@ void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Express
             funcExpressions[funcName] = curFuncExpressions;
             funcName = std::string();
             curFuncExpressions = std::vector<std::vector<std::shared_ptr<Expression>>>();
+        } else if (expressionLine[0]->token.payload == "if") {
+            inIf = true;
+            
+            std::vector<std::shared_ptr<Expression>> cutExpressionLine;
+            for (int cutExprIdx = 1; cutExprIdx < expressionLine.size(); cutExprIdx++) {
+                cutExpressionLine.push_back(expressionLine[cutExprIdx]);
+            }
+            
+            ifExpressionConditional = parseLine(cutExpressionLine)[0];
+            ifExpressionRoot = expressionLine[0];
+        } else if (expressionLine[0]->token.payload == "endif") {
+            inIf = false;
+            curFuncExpressions.push_back({ifExpression(ifExpressionRoot, ifExpressionConditional, curIfExpressions)});
         } else {
-            curFuncExpressions.push_back(parseLine(expressionLine));
+            if (inIf) {
+                curIfExpressions.push_back(parseLine(expressionLine));
+            } else {
+                curFuncExpressions.push_back(parseLine(expressionLine));
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ enum class ExpressionType {
     VAR,
     STRING,
     PRINT,
+    IF,
     IS_LESS,
     IS_LEQ,
     IS_GREATER,
@@ -44,6 +45,12 @@ struct Expression {
     // binary ops
     std::shared_ptr<Expression> left;
     std::shared_ptr<Expression> right;
+    
+    // control flow
+    std::vector<std::vector<std::shared_ptr<Expression>>> ifStatements;
+    std::vector<std::vector<std::shared_ptr<Expression>>> elseStatements;
+    
+    std::shared_ptr<Expression> conditional;
     
     Expression() {}
     
