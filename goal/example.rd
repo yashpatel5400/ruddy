@@ -19,5 +19,7 @@ fn main
 
     if x < y
         test
+    else
+        print("NOPE")
     endif
 endfn 

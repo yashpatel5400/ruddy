@@ -95,12 +95,13 @@ std::shared_ptr<Expression> printExpression(std::shared_ptr<Expression> root, st
     return expression;
 }
 
-std::shared_ptr<Expression> ifExpression(std::shared_ptr<Expression> root, std::shared_ptr<Expression> conditional, std::vector<std::vector<std::shared_ptr<Expression>>> ifStatements) {
+std::shared_ptr<Expression> ifExpression(std::shared_ptr<Expression> root, std::shared_ptr<Expression> conditional, std::vector<std::vector<std::shared_ptr<Expression>>> ifStatements, std::vector<std::vector<std::shared_ptr<Expression>>> elseStatements) {
     std::shared_ptr<Expression> expression = std::make_shared<Expression>();
     expression->expressionType = ExpressionType::IF;
     expression->token = root->token;
     expression->conditional = conditional;
     expression->ifStatements = ifStatements;
+    expression->elseStatements = elseStatements;
     return expression;
 }
 
@@ -338,9 +339,11 @@ void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Express
     std::vector<std::vector<std::shared_ptr<Expression>>> curFuncExpressions;
 
     std::vector<std::vector<std::shared_ptr<Expression>>> curIfExpressions;
+    std::vector<std::vector<std::shared_ptr<Expression>>> curElseExpressions;
     std::shared_ptr<Expression> ifExpressionRoot;
     std::shared_ptr<Expression> ifExpressionConditional;
     bool inIf = false;
+    bool inElse = false;
     
     std::string funcName;
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressionLines) {
@@ -364,10 +367,15 @@ void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Express
             ifExpressionRoot = expressionLine[0];
         } else if (expressionLine[0]->token.payload == "endif") {
             inIf = false;
-            curFuncExpressions.push_back({ifExpression(ifExpressionRoot, ifExpressionConditional, curIfExpressions)});
+            curFuncExpressions.push_back({ifExpression(ifExpressionRoot, ifExpressionConditional, curIfExpressions, curElseExpressions)});
+        } else if (expressionLine[0]->token.payload == "else") {
+            inIf = false;
+            inElse = true;
         } else {
             if (inIf) {
                 curIfExpressions.push_back(parseLine(expressionLine));
+            } else if (inElse) {
+                curElseExpressions.push_back(parseLine(expressionLine));
             } else {
                 curFuncExpressions.push_back(parseLine(expressionLine));
             }

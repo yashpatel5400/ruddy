@@ -101,6 +101,8 @@ Result evaluateLine(const std::vector<std::shared_ptr<Expression>>& expressionLi
                 Result boolResult = evaluateLine({expression->conditional});
                 if (boolResult.resultInt) {
                     evaluate(expression->ifStatements);
+                } else {
+                    evaluate(expression->elseStatements);
                 }
                 break;
             }
