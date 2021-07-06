@@ -1,5 +1,4 @@
 fn test
-// asdf this is 
     x = 3 
     y = 5 * 1 + 2
 
@@ -23,7 +22,7 @@ fn main
         else
             print("NOPE2")
         endif
-        
+
         print("NOPE")
     endif
 endfn 

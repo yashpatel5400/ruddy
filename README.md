@@ -3,20 +3,31 @@ Ruddy is an experimental language, mostly for educational purposes. The code als
 
 ```
 fn test
-    x = 3 // this is a comment
+    x = 3 
     y = 5 * 1 + 2
 
     z = "hello world"
-    a = "test "
+    aasdf = "test "
 
     print(x + y - 3)
     print("testing hello world")
-    print(a + z)
+    print(aasdf + z)
 endfn
 
 fn main
-    test
-    print("exit main")
-endfn
+    x = 3
+    y = 4
 
+    if x > y
+        test
+    else
+        if x < y
+            test
+        else
+            print("NOPE2")
+        endif
+
+        print("NOPE")
+    endif
+endfn 
 ```
