@@ -15,11 +15,15 @@ fn main
     x = 3
     y = 4
 
-    print(x)
-
-    if x < y
+    if x > y
         test
     else
+        if x < y
+            test
+        else
+            print("NOPE2")
+        endif
+        
         print("NOPE")
     endif
 endfn 

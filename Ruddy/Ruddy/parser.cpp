@@ -338,12 +338,11 @@ void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Express
            const std::vector<std::vector<std::shared_ptr<Expression>>>& expressionLines) {
     std::vector<std::vector<std::shared_ptr<Expression>>> curFuncExpressions;
 
-    std::vector<std::vector<std::shared_ptr<Expression>>> curIfExpressions;
-    std::vector<std::vector<std::shared_ptr<Expression>>> curElseExpressions;
-    std::shared_ptr<Expression> ifExpressionRoot;
-    std::shared_ptr<Expression> ifExpressionConditional;
-    bool inIf = false;
-    bool inElse = false;
+    std::vector<std::vector<std::vector<std::shared_ptr<Expression>>>> curIfExpressions;
+    std::vector<std::vector<std::vector<std::shared_ptr<Expression>>>> curElseExpressions;
+    std::vector<std::shared_ptr<Expression>> ifExpressionRoot;
+    std::vector<std::shared_ptr<Expression>> ifExpressionConditional;
+    std::vector<bool> inIf;
     
     std::string funcName;
     for (const std::vector<std::shared_ptr<Expression>>& expressionLine : expressionLines) {
@@ -356,27 +355,42 @@ void parse(std::map<std::string, std::vector<std::vector<std::shared_ptr<Express
             funcName = std::string();
             curFuncExpressions = std::vector<std::vector<std::shared_ptr<Expression>>>();
         } else if (expressionLine[0]->token.payload == "if") {
-            inIf = true;
+            inIf.push_back(true);
             
             std::vector<std::shared_ptr<Expression>> cutExpressionLine;
             for (int cutExprIdx = 1; cutExprIdx < expressionLine.size(); cutExprIdx++) {
                 cutExpressionLine.push_back(expressionLine[cutExprIdx]);
             }
             
-            ifExpressionConditional = parseLine(cutExpressionLine)[0];
-            ifExpressionRoot = expressionLine[0];
+            curIfExpressions.push_back(std::vector<std::vector<std::shared_ptr<Expression>>>());
+            ifExpressionConditional.push_back(parseLine(cutExpressionLine)[0]);
+            ifExpressionRoot.push_back(expressionLine[0]);
         } else if (expressionLine[0]->token.payload == "endif") {
-            inIf = false;
-            curFuncExpressions.push_back({ifExpression(ifExpressionRoot, ifExpressionConditional, curIfExpressions, curElseExpressions)});
+            
+            std::shared_ptr<Expression> addingExpressionRoot = ifExpressionRoot.back();
+            std::shared_ptr<Expression> addingExpressionConditional = ifExpressionConditional.back();
+            std::vector<std::vector<std::shared_ptr<Expression>>> addingIfExpressions = curIfExpressions.back();
+            std::vector<std::vector<std::shared_ptr<Expression>>> addingElseExpressions = curElseExpressions.back();
+            
+            ifExpressionRoot.pop_back();
+            ifExpressionConditional.pop_back();
+            curIfExpressions.pop_back();
+            curElseExpressions.pop_back();
+            
+            curFuncExpressions.push_back({ifExpression(addingExpressionRoot, addingExpressionConditional, addingIfExpressions, addingElseExpressions)});
         } else if (expressionLine[0]->token.payload == "else") {
-            inIf = false;
-            inElse = true;
+            inIf[inIf.size() - 1] = false;
+            curElseExpressions.push_back(std::vector<std::vector<std::shared_ptr<Expression>>>());
         } else {
-            if (inIf) {
-                curIfExpressions.push_back(parseLine(expressionLine));
-            } else if (inElse) {
-                curElseExpressions.push_back(parseLine(expressionLine));
-            } else {
+            if (curIfExpressions.size() > 0) {
+                if (inIf[inIf.size() - 1]) {
+                    curIfExpressions[curIfExpressions.size() - 1].push_back(parseLine(expressionLine));
+                } else {
+                    curElseExpressions[curIfExpressions.size() - 1].push_back(parseLine(expressionLine));
+                }
+            }
+            
+            else {
                 curFuncExpressions.push_back(parseLine(expressionLine));
             }
         }
