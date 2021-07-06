@@ -1,5 +1,5 @@
 # ruddy
-Ruddy is an experimental language, mostly for educational purposes. The syntax is fairly clunky (especially for function dispatch), but this is an example:
+Ruddy is an experimental language, mostly for educational purposes. The code also isn't all that great, but it works! The syntax is fairly clunky (*ahem* Matlab), but this is an example:
 
 ```
 fn test
